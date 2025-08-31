@@ -1,101 +1,181 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
-class RCDetailsScreen extends StatefulWidget {
+class RcDetailsScreen extends StatefulWidget {
+  const RcDetailsScreen({super.key});
+
   @override
-  _RCDetailsScreenState createState() => _RCDetailsScreenState();
+  _RcDetailsScreenState createState() => _RcDetailsScreenState();
 }
 
-class _RCDetailsScreenState extends State<RCDetailsScreen> {
+class _RcDetailsScreenState extends State<RcDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  String ownerName = '';
-  String vehicleNumber = '';
-  String vehicleModel = '';
-  String registrationNumber = '';
-  String contactNumber = '';
+  final _rcController = TextEditingController();
+  final _ownerController = TextEditingController();
+  final _modelController = TextEditingController();
+  final _chassisController = TextEditingController();
+  final _engineController = TextEditingController();
+  DateTime? _regDate;
+  String? _vehicleType;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('RC Details')),
+      appBar: AppBar(title: const Text("RC Details")),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Owner Name'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Owner name cannot be empty';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => ownerName = value!,
+          child: ListView(
+            children: [
+              // RC Number
+              TextFormField(
+                controller: _rcController,
+                decoration: const InputDecoration(
+                  labelText: "RC Number",
+                  hintText: "e.g. KA01AB1234",
                 ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Vehicle Number'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Vehicle number cannot be empty';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => vehicleNumber = value!,
+                validator: (value) {
+                  final pattern = RegExp(r'^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$');
+                  if (value == null || value.isEmpty) {
+                    return "RC Number is required";
+                  } else if (!pattern.hasMatch(value)) {
+                    return "Enter valid RC (e.g. KA01AB1234)";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 15),
+
+              // Owner Name
+              TextFormField(
+                controller: _ownerController,
+                decoration: const InputDecoration(
+                  labelText: "Owner Name",
+                  hintText: "Full name",
                 ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Vehicle Model'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Vehicle model cannot be empty';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => vehicleModel = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Owner name is required";
+                  } else if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(value)) {
+                    return "Name must only contain letters";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 15),
+
+              // Vehicle Type
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: "Vehicle Type"),
+                items: ["Car", "Bike", "Truck", "Bus", "Other"]
+                    .map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        ))
+                    .toList(),
+                onChanged: (value) => setState(() => _vehicleType = value),
+                validator: (value) =>
+                    value == null ? "Select vehicle type" : null,
+              ),
+
+              const SizedBox(height: 15),
+
+              // Vehicle Model
+              TextFormField(
+                controller: _modelController,
+                decoration: const InputDecoration(
+                  labelText: "Vehicle Model",
+                  hintText: "e.g. Maruti Swift",
                 ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Registration Number'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Registration number cannot be empty';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => registrationNumber = value!,
+                validator: (value) =>
+                    value == null || value.isEmpty ? "Model is required" : null,
+              ),
+
+              const SizedBox(height: 15),
+
+              // Chassis Number
+              TextFormField(
+                controller: _chassisController,
+                decoration: const InputDecoration(
+                  labelText: "Chassis Number",
+                  hintText: "17 character VIN",
                 ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Contact Number'),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Contact number cannot be empty';
-                    } else if (value.length < 10) {
-                      return 'Enter a valid 10-digit number';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => contactNumber = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Chassis number required";
+                  } else if (!RegExp(r'^[A-HJ-NPR-Z0-9]{17}$')
+                      .hasMatch(value)) {
+                    return "Invalid chassis number";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 15),
+
+              // Engine Number
+              TextFormField(
+                controller: _engineController,
+                decoration: const InputDecoration(
+                  labelText: "Engine Number",
+                  hintText: "10–12 characters",
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      // TODO: Send RC details to backend API
-                      Fluttertoast.showToast(
-                          msg: "RC Details Saved Successfully",
-                          toastLength: Toast.LENGTH_SHORT);
-                      print(
-                          'Owner: $ownerName, Vehicle: $vehicleNumber, Model: $vehicleModel, RegNo: $registrationNumber, Contact: $contactNumber');
-                    }
-                  },
-                  child: Text('Save RC Details'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Engine number required";
+                  } else if (value.length < 10 || value.length > 12) {
+                    return "Engine number must be 10–12 characters";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 15),
+
+              // Registration Date
+              ListTile(
+                title: Text(_regDate == null
+                    ? "Select Registration Date"
+                    : "Registration Date: ${_regDate!.toLocal().toString().split(' ')[0]}"),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(1980),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setState(() => _regDate = picked);
+                  }
+                },
+              ),
+              if (_regDate == null)
+                const Padding(
+                  padding: EdgeInsets.only(left: 12),
+                  child: Text(
+                    "Registration date is required",
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
                 ),
-              ],
-            ),
+
+              const SizedBox(height: 20),
+
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate() && _regDate != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("RC Details Saved")),
+                    );
+                    Navigator.pushReplacementNamed(context, '/home');
+                  }
+                },
+                child: const Text("Submit RC Details"),
+              ),
+            ],
           ),
         ),
       ),

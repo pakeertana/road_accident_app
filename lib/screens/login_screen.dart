@@ -1,55 +1,94 @@
 import 'package:flutter/material.dart';
-import '../utils/validators.dart';
-import 'rc_details_screen.dart';
+import 'package:hive/hive.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginPageState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginPageState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  String email = '';
-  String password = '';
+
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+   Future<void> loginUser() async {
+  var userBox = await Hive.openBox('users');  // ✅ same as register
+  String email = emailController.text.trim();
+  String password = passwordController.text.trim();
+
+  if (userBox.containsKey(email)) {
+    var userData = userBox.get(email);
+
+    if (userData["password"] == password) {
+      if (!mounted) return; // safety
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login Successful!")),
+      );
+      Navigator.pushReplacementNamed(context, '/home'); // redirect to home
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Incorrect Password!")),
+      );
+    }
+  } else {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("No account found. Please register.")),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(
+        title: const Text("Login"),
+        backgroundColor: Colors.deepPurple,
+      ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Email'),
-                validator: Validators.validateEmail,
-                onSaved: (value) => email = value!,
+                controller: emailController,
+                decoration: const InputDecoration(labelText: "Email"),
+                validator: (value) =>
+                    value == null || value.isEmpty ? "Enter email" : null,
               ),
+              const SizedBox(height: 10),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Password'),
+                controller: passwordController,
+                decoration: const InputDecoration(labelText: "Password"),
                 obscureText: true,
-                validator: Validators.validatePassword,
-                onSaved: (value) => password = value!,
+                validator: (value) =>
+                    value == null || value.isEmpty ? "Enter password" : null,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-                    // Navigate to RC Details screen after login
-                    Navigator.pushReplacementNamed(context, '/rc_details');
+                    loginUser();
                   }
                 },
-                child: Text('Login'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                child: const Text("Login", style: TextStyle(fontSize: 18)),
               ),
+              const SizedBox(height: 10),
               TextButton(
                 onPressed: () {
-                  // Navigate to Register screen
-                  Navigator.pushNamed(context, '/register');
+                  Navigator.pushReplacementNamed(context, '/register');
                 },
-                child: Text("Don't have an account? Register"),
+                child: const Text("Don’t have an account? Register here"),
               ),
             ],
           ),
